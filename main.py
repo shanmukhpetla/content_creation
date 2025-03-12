@@ -78,31 +78,32 @@ async def create_caption(file: UploadFile = File(...), prompt_overrides: str = F
 async def create_highlight_reels(
     file: UploadFile = File(...),
     target_duration: float = Form(60.0),
-    num_reels: int = Form(5)
+    num_reels: int = Form(5),
+    topic: str = Form(None)  # Added topic parameter
 ):
     if target_duration <= 0:
         raise HTTPException(status_code=400, detail="Target duration must be positive")
     if num_reels <= 0 or num_reels > 10:
         raise HTTPException(status_code=400, detail="Number of reels must be between 1 and 10")
-    
+
     input_path = save_upload_file(file)
     output_dir = OUTPUT_DIR
-    
+
     try:
         result_paths = create_multiple_highlight_reels(
             input_path,
             output_dir,
+            topic=topic,  # Added topic parameter
             target_duration=target_duration,
             num_reels=num_reels
         )
-        
+
         zip_path = os.path.join(output_dir, "highlight_reels.zip")
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             for path in result_paths:
                 zipf.write(path, os.path.basename(path))
-                # Clean up individual reel files after adding to zip
                 os.remove(path)
-                
+
         return FileResponse(
             zip_path,
             media_type="application/zip",
