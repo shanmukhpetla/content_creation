@@ -102,7 +102,7 @@ def generate_caption(video_path, prompt_overrides=None):
     finally:
         video.close()
 
-def create_multiple_highlight_reels(video_path, output_dir, target_duration=60, num_reels=5):
+def create_multiple_highlight_reels(video_path, output_dir, topic=None, target_duration=60, num_reels=5):
     segments, duration, video = process_video_segments(video_path)
     transcripts = []
     try:
@@ -124,11 +124,31 @@ def create_multiple_highlight_reels(video_path, output_dir, target_duration=60, 
         output_paths = []
 
         for i in range(num_reels):
-            system_prompt = """You are a video editing AI. Analyze the transcript and return timestamps for highlights.
-            Format your response exactly like this: [[start1, end1], [start2, end2]].
-            Generate different timestamps than previous responses to create variety."""
+            system_prompt = """You are a developer assistant where you only provide timestamps in this exact format: [[start1, end1], [start2, end2]].
+Given the transcript segments, generate a list of highlights with start and end times for the video using multiple segments.
+
+Constraints:
+•⁠  ⁠The highlights should be a direct part of the video and not out of context
+•⁠  ⁠The highlights should be interesting and clippable, providing value to the viewer
+•⁠  ⁠The highlights should be just the right length to convey the information
+•⁠  ⁠The highlights should include more than one segment for context and continuity
+•⁠  ⁠The highlights should not cut off mid-sentence
+•⁠  ⁠The highlights should be based on segment relevance
+•⁠  ⁠Each segment should be scored out of 100 based on relevance
+•⁠  ⁠When a specific topic is provided, extract the complete segment discussing that topic without breaks
+•⁠  ⁠Topic-specific clips should maintain full context and natural flow of conversation
+•⁠  ⁠Include surrounding context if the topic discussion extends beyond immediate mentions
+
+Return ONLY the timestamp arrays like this:
+[[0, 15], [30, 45], [50, 65]]"""
+
+            
+            topic_instruction = ""
+            if topic:
+                topic_instruction = f"Focus specifically on segments discussing {topic}. Only select parts relevant to {topic}."
             
             user_prompt = f"""Create a {target_duration} second highlight reel (variation {i+1}).
+            {topic_instruction}
             Return timestamps in seconds as a JSON array. Make this selection different from other variations.
             Duration: {duration} seconds
             Transcript: {combined_transcript}"""
@@ -158,7 +178,7 @@ def create_multiple_highlight_reels(video_path, output_dir, target_duration=60, 
                     clips.append(clip)
                     total_duration += end - start
             
-            output_path = os.path.join(output_dir, f"highlight_reel_{i+1}.mp4")
+            output_path = os.path.join(output_dir, f"highlight_reel_{topic}_{i+1}.mp4" if topic else f"highlight_reel_{i+1}.mp4")
             
             if clips:
                 final_video = mp.concatenate_videoclips(clips)
@@ -171,3 +191,4 @@ def create_multiple_highlight_reels(video_path, output_dir, target_duration=60, 
         return output_paths
     finally:
         video.close()
+
