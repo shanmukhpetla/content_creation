@@ -125,7 +125,7 @@ def create_multiple_highlight_reels(video_path, output_dir, topic=None, target_d
 
         for i in range(num_reels):
             system_prompt = """You are a developer assistant where you only provide timestamps in this exact format: [[start1, end1], [start2, end2]].
-Given the transcript segments, generate a list of highlights with start and end times for the video using multiple segments.
+Given the transcript segments, generate a list of highlights with start and end times for the video using multiple segments. Generate different timestamps than previous responses to create variety.
 
 Constraints:
 •⁠  ⁠The highlights should be a direct part of the video and not out of context
@@ -191,4 +191,3 @@ Return ONLY the timestamp arrays like this:
         return output_paths
     finally:
         video.close()
-
